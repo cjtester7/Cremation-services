@@ -1,0 +1,96 @@
+# netlify.toml
+# Carewell Cremations — Netlify Configuration
+# Version: 1.0
+# Publish dir points to the current active HTML version.
+# Update [build].publish and [[redirects]] when bumping to a new index version.
+#
+# Active versions:
+#   index-v1.html          — hero section with AI concierge
+#   voice-test-v1.html     — standalone Gemini voice test page
+#   concierge-v1.js        — Claude API proxy function
+#   lead-capture-v1.js     — lead storage + email function
+#   gemini-token-v1.js     — Gemini API key provider for voice
+
+# ---------------------------------------------------------------------------
+# BUILD SETTINGS
+# ---------------------------------------------------------------------------
+[build]
+  publish   = "."                     # root — index-v1.html is the entry point
+  functions = "netlify/functions"     # serverless functions directory
+
+# ---------------------------------------------------------------------------
+# ENVIRONMENT CONTEXT
+# ---------------------------------------------------------------------------
+[context.production.environment]
+  NODE_VERSION = "18"
+  # Set secrets in Netlify dashboard → Site Settings → Environment Variables:
+  #   ANTHROPIC_API_KEY
+  #   SUPABASE_URL
+  #   SUPABASE_ANON_KEY
+  #   RESEND_API_KEY
+  #   FROM_EMAIL
+  #   ALLOWED_ORIGIN
+  #   CRM_WEBHOOK_URL  (optional)
+
+[context.deploy-preview.environment]
+  NODE_VERSION = "18"
+
+# ---------------------------------------------------------------------------
+# REDIRECTS
+# ---------------------------------------------------------------------------
+# Canonical entry: index-v1.html is served at /
+[[redirects]]
+  from   = "/"
+  to     = "/index-v1.html"
+  status = 200
+
+# Voice test page — accessible at /voice-test
+[[redirects]]
+  from   = "/voice-test"
+  to     = "/voice-test-v1.html"
+  status = 200
+
+# Ensure clean URL routing (SPA-style fallback not needed for static,
+# but kept here for future React/Vue upgrade)
+[[redirects]]
+  from   = "/*"
+  to     = "/index-v1.html"
+  status = 200
+
+# ---------------------------------------------------------------------------
+# FUNCTION-SPECIFIC SETTINGS
+# ---------------------------------------------------------------------------
+[functions]
+  node_bundler = "esbuild"
+
+[functions."concierge-v1"]
+  included_files = []
+
+[functions."lead-capture-v1"]
+  included_files = []
+
+[functions."gemini-token-v1"]
+  included_files = []
+
+# ---------------------------------------------------------------------------
+# HTTP HEADERS — security hardening
+# ---------------------------------------------------------------------------
+[[headers]]
+  for = "/*"
+  [headers.values]
+    X-Frame-Options           = "DENY"
+    X-Content-Type-Options    = "nosniff"
+    Referrer-Policy           = "strict-origin-when-cross-origin"
+    Permissions-Policy        = "camera=(), microphone=(), geolocation=()"
+
+# Cache HTML with short TTL (allows fast redeploy)
+[[headers]]
+  for = "/*.html"
+  [headers.values]
+    Cache-Control = "public, max-age=60, stale-while-revalidate=300"
+
+# Cache static assets aggressively
+[[headers]]
+  for = "/assets/*"
+  [headers.values]
+    Cache-Control = "public, max-age=31536000, immutable"

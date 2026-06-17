@@ -1,0 +1,20 @@
+{
+  "name": "carewell-cremations",
+  "version": "1.0.0",
+  "description": "Carewell Cremations — AI Care Concierge. Netlify + Claude API + Supabase.",
+  "private": true,
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "dependencies": {
+    "@anthropic-ai/sdk": "^0.27.0"
+  },
+  "devDependencies": {
+    "netlify-cli": "^17.0.0"
+  },
+  "scripts": {
+    "dev":   "netlify dev",
+    "build": "echo 'Static site — no build step required'",
+    "lint":  "node --check netlify/functions/concierge-v1.js && node --check netlify/functions/lead-capture-v1.js"
+  }
+}
