@@ -5,7 +5,8 @@
 # Update [build].publish and [[redirects]] when bumping to a new index version.
 #
 # Active versions:
-#   index-v5.html          — hero section with AI concierge (CR004 fixes)
+#   index-v6.html          — hero section with AI concierge (CR005 live production)
+#   concierge-v2.js        — Claude API proxy with full Carewell knowledge base
 #   voice-test-v1.html     — standalone Gemini voice test page
 #   concierge-v1.js        — Claude API proxy function
 #   lead-capture-v1.js     — lead storage + email function
@@ -41,7 +42,7 @@
 # Canonical entry: index-v1.html is served at /
 [[redirects]]
   from   = "/"
-  to     = "/index-v5.html"
+  to     = "/index-v6.html"
   status = 200
 
 # Voice test page — accessible at /voice-test
@@ -64,6 +65,9 @@
   node_bundler = "esbuild"
 
 [functions."concierge-v1"]
+  included_files = []
+
+[functions."concierge-v2"]
   included_files = []
 
 [functions."lead-capture-v1"]
