@@ -5,7 +5,7 @@
 # Update [build].publish and [[redirects]] when bumping to a new index version.
 #
 # Active versions:
-#   index-v3.html          — hero section with AI concierge (CR002 fixes)
+#   index-v4.html          — hero section with AI concierge (CR003 fixes)
 #   voice-test-v1.html     — standalone Gemini voice test page
 #   concierge-v1.js        — Claude API proxy function
 #   lead-capture-v1.js     — lead storage + email function
@@ -41,7 +41,7 @@
 # Canonical entry: index-v1.html is served at /
 [[redirects]]
   from   = "/"
-  to     = "/index-v3.html"
+  to     = "/index-v4.html"
   status = 200
 
 # Voice test page — accessible at /voice-test
@@ -83,11 +83,11 @@
     Referrer-Policy           = "strict-origin-when-cross-origin"
     Permissions-Policy        = "camera=(), microphone=(), geolocation=()"
 
-# Cache HTML with short TTL (allows fast redeploy)
+# Cache HTML — no-store prevents stale file being served after Netlify redeploy
 [[headers]]
   for = "/*.html"
   [headers.values]
-    Cache-Control = "public, max-age=60, stale-while-revalidate=300"
+    Cache-Control = "no-cache, no-store, must-revalidate"
 
 # Cache static assets aggressively
 [[headers]]
