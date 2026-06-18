@@ -1,0 +1,814 @@
+<!DOCTYPE html>
+<!--
+  index-v3.html
+  Carewell Cremations — Digital Care Concierge
+  Version: 3.0
+  CR002 — Error 02 fix:
+    - Removed pre-flight checkFunctionHealth() call from openConcierge() — was firing HTTP 404
+      banner immediately on panel open before user sent any message
+    - Error banner now only appears after a real send attempt fails
+    - DEV_MODE default changed to true so UI works immediately without deployed backend
+    - Improved 404 catch message with specific deploy instructions
+  Deploy target: Netlify (via GitHub sync)
+-->
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Carewell Cremations — Compassionate Care, Every Step</title>
+  <meta name="description" content="Carewell Cremations provides dignified, affordable cremation services. We're here 24/7 to guide your family with compassion and care." />
+
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+
+  <!-- Google Fonts: Lora (display) + Inter (body) -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Lora:ital,wght@0,400;0,500;1,400&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet" />
+
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: {
+            display: ['Lora', 'Georgia', 'serif'],
+            body: ['Inter', 'system-ui', 'sans-serif'],
+          },
+          colors: {
+            sage: {
+              50:  '#f4f7f4',
+              100: '#e2ebe2',
+              200: '#c4d6c4',
+              300: '#99b899',
+              400: '#6e9a6e',
+              500: '#4e7c4e',
+              600: '#3c6240',
+              700: '#2e4d32',
+              800: '#263e28',
+              900: '#1e3020',
+            },
+            slate: {
+              warm: '#f8f6f2',
+            }
+          }
+        }
+      }
+    }
+  </script>
+
+  <style>
+    /* Base font defaults */
+    body {
+      font-family: 'Inter', system-ui, sans-serif;
+      background-color: #f8f6f2;
+      color: #2c2c2a;
+    }
+    h1, h2, h3 {
+      font-family: 'Lora', Georgia, serif;
+    }
+
+    /* Journey card hover lift */
+    .journey-card {
+      transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
+    }
+    .journey-card:hover {
+      transform: translateY(-3px);
+    }
+
+    /* Concierge panel transition */
+    #concierge-panel {
+      transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    /* Chat message bubbles */
+    .msg-ai {
+      background: #ede9fe;
+      color: #3c1a78;
+      border-radius: 0 16px 16px 16px;
+      max-width: 82%;
+    }
+    .msg-user {
+      background: #6d28d9;
+      color: #ede9fe;
+      border-radius: 16px 16px 0 16px;
+      max-width: 82%;
+      margin-left: auto;
+    }
+
+    /* Typing dots */
+    @keyframes bounce-dot {
+      0%, 80%, 100% { transform: translateY(0); opacity: 0.4; }
+      40% { transform: translateY(-5px); opacity: 1; }
+    }
+    .dot1 { animation: bounce-dot 1.2s ease-in-out infinite; }
+    .dot2 { animation: bounce-dot 1.2s ease-in-out 0.2s infinite; }
+    .dot3 { animation: bounce-dot 1.2s ease-in-out 0.4s infinite; }
+
+    /* Scrollbar styling for chat area */
+    #messages::-webkit-scrollbar { width: 4px; }
+    #messages::-webkit-scrollbar-track { background: transparent; }
+    #messages::-webkit-scrollbar-thumb { background: #d4d0c8; border-radius: 4px; }
+
+    /* Mobile bottom sheet */
+    @media (max-width: 767px) {
+      #concierge-panel {
+        top: auto;
+        bottom: 0;
+        right: 0;
+        left: 0;
+        width: 100%;
+        height: 88vh;
+        border-radius: 20px 20px 0 0;
+        transform: translateY(100%);
+      }
+      #concierge-panel.open {
+        transform: translateY(0);
+      }
+    }
+    @media (min-width: 768px) {
+      #concierge-panel {
+        transform: translateX(100%);
+      }
+      #concierge-panel.open {
+        transform: translateX(0);
+      }
+    }
+
+    /* Reduced motion */
+    @media (prefers-reduced-motion: reduce) {
+      .journey-card { transition: none; }
+      #concierge-panel { transition: none; }
+      .dot1, .dot2, .dot3 { animation: none; opacity: 0.6; }
+    }
+  </style>
+</head>
+
+<body class="min-h-screen">
+
+  <!-- ===================== NAVIGATION ===================== -->
+  <nav class="bg-white border-b border-stone-200 sticky top-0 z-30">
+    <div class="max-w-6xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between">
+      <!-- Logo -->
+      <div class="flex items-center gap-2.5">
+        <div class="w-7 h-7 rounded-full bg-sage-500 flex items-center justify-center flex-shrink-0">
+          <svg width="14" height="14" viewBox="0 0 14 14" fill="none" aria-hidden="true">
+            <path d="M7 1C7 1 3 4 3 7.5C3 9.985 4.791 12 7 12C9.209 12 11 9.985 11 7.5C11 4 7 1 7 1Z" fill="white"/>
+          </svg>
+        </div>
+        <span class="font-display text-stone-700 text-lg font-medium">Carewell Cremations</span>
+      </div>
+
+      <!-- Desktop nav links -->
+      <div class="hidden md:flex items-center gap-7 text-sm text-stone-500">
+        <a href="#services" class="hover:text-stone-700 transition-colors">Services</a>
+        <a href="#pricing" class="hover:text-stone-700 transition-colors">Pricing</a>
+        <a href="#about" class="hover:text-stone-700 transition-colors">About Us</a>
+        <a href="#resources" class="hover:text-stone-700 transition-colors">Resources</a>
+      </div>
+
+      <!-- Nav CTA -->
+      <div class="flex items-center gap-3">
+        <a href="tel:+18005551234" class="hidden sm:flex items-center gap-1.5 text-sm text-sage-600 font-medium hover:text-sage-700 transition-colors">
+          <svg width="15" height="15" viewBox="0 0 15 15" fill="none" aria-hidden="true">
+            <path d="M2 2.5C2 2.224 2.224 2 2.5 2h2.793l1.5 3.5L5.5 6.793A10.002 10.002 0 008.207 9.5l1.293-1.293 3.5 1.5V12.5c0 .276-.224.5-.5.5C5.925 13 2 9.075 2 2.5z" fill="currentColor"/>
+          </svg>
+          (800) 555-1234
+        </a>
+        <button
+          onclick="openConcierge('immediate')"
+          class="bg-sage-600 hover:bg-sage-700 text-white text-sm font-medium px-4 py-2 rounded-lg transition-colors"
+        >
+          Get Help Now
+        </button>
+      </div>
+    </div>
+  </nav>
+
+  <!-- ===================== HERO SECTION ===================== -->
+  <main>
+    <section class="bg-white pt-14 pb-10 px-4 sm:px-6" aria-label="How can we help you today">
+
+      <!-- Headline block -->
+      <div class="text-center max-w-2xl mx-auto mb-10">
+        <p class="text-sage-600 text-sm font-medium tracking-wide uppercase mb-4">Here when it matters most</p>
+        <h1 class="font-display text-3xl sm:text-4xl md:text-5xl text-stone-700 leading-tight mb-4">
+          We're here to help —<br class="hidden sm:block" />
+          <em>however we can.</em>
+        </h1>
+        <p class="text-stone-500 text-lg leading-relaxed max-w-xl mx-auto">
+          Tell us what brings you here today. Our Care Concierge will guide you gently through every next step.
+        </p>
+      </div>
+
+      <!-- Section divider with label -->
+      <div class="flex items-center gap-4 max-w-3xl mx-auto mb-8">
+        <div class="flex-1 h-px bg-stone-200"></div>
+        <span class="text-stone-400 text-sm whitespace-nowrap font-body">How can we help you today?</span>
+        <div class="flex-1 h-px bg-stone-200"></div>
+      </div>
+
+      <!-- ===== THREE JOURNEY CARDS ===== -->
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-5 max-w-4xl mx-auto">
+
+        <!-- Card 1: Immediate Need -->
+        <button
+          class="journey-card text-left border border-emerald-200 bg-white rounded-2xl p-6 cursor-pointer hover:shadow-lg hover:border-emerald-400 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:ring-offset-2 flex flex-col"
+          onclick="openConcierge('immediate')"
+          aria-label="Someone has passed away — get immediate guidance"
+        >
+          <!-- Top accent bar -->
+          <div class="w-full h-1 bg-emerald-500 rounded-full mb-5 -mt-1 -mx-0 relative" style="margin-left:-1px;width:calc(100%+2px);border-radius:8px 8px 0 0;position:absolute;top:0;left:0;border-top-left-radius:inherit;border-top-right-radius:inherit;"></div>
+
+          <div class="w-12 h-12 rounded-full bg-emerald-50 flex items-center justify-center mb-4 flex-shrink-0">
+            <svg width="22" height="22" viewBox="0 0 22 22" fill="none" aria-hidden="true">
+              <path d="M11 19.25S2.75 14 2.75 8.25A5.25 5.25 0 0111 5.17 5.25 5.25 0 0119.25 8.25C19.25 14 11 19.25 11 19.25z" stroke="#059669" stroke-width="1.5" stroke-linejoin="round"/>
+            </svg>
+          </div>
+
+          <div class="mb-3">
+            <span class="text-xs font-semibold text-emerald-700 bg-emerald-50 border border-emerald-200 px-2.5 py-1 rounded-full">Available 24 / 7</span>
+          </div>
+
+          <h2 class="font-display text-stone-700 text-xl mb-2">Someone Has Passed Away</h2>
+          <p class="text-stone-500 text-sm leading-relaxed flex-1 mb-6">
+            Receive immediate, compassionate guidance. We'll walk through every next step together, at your pace.
+          </p>
+
+          <div class="w-full bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl py-3 text-sm font-semibold text-center transition-colors">
+            Talk to an Assistant
+          </div>
+        </button>
+
+        <!-- Card 2: Plan Ahead (featured) -->
+        <div class="relative">
+          <!-- "Most popular" floating badge -->
+          <div class="absolute -top-3 left-1/2 -translate-x-1/2 z-10">
+            <span class="bg-violet-500 text-violet-50 text-xs font-semibold px-3 py-1 rounded-full shadow-sm">Most Popular</span>
+          </div>
+
+          <button
+            class="journey-card text-left w-full border-2 border-violet-400 bg-white rounded-2xl p-6 cursor-pointer hover:shadow-lg hover:border-violet-500 focus:outline-none focus:ring-2 focus:ring-violet-500 focus:ring-offset-2 flex flex-col h-full"
+            onclick="openConcierge('planning')"
+            aria-label="Plan ahead — explore cremation options and pricing"
+          >
+            <div class="w-12 h-12 rounded-full bg-violet-50 flex items-center justify-center mb-4 flex-shrink-0">
+              <svg width="22" height="22" viewBox="0 0 22 22" fill="none" aria-hidden="true">
+                <circle cx="11" cy="11" r="7.5" stroke="#7c3aed" stroke-width="1.5"/>
+                <circle cx="11" cy="11" r="3" stroke="#7c3aed" stroke-width="1.5"/>
+                <path d="M11 3.5V1.5M11 20.5v-2M3.5 11H1.5M20.5 11h-2" stroke="#7c3aed" stroke-width="1.5" stroke-linecap="round"/>
+              </svg>
+            </div>
+
+            <div class="mb-3">
+              <span class="text-xs font-semibold text-violet-700 bg-violet-50 border border-violet-200 px-2.5 py-1 rounded-full">No obligation</span>
+            </div>
+
+            <h2 class="font-display text-stone-700 text-xl mb-2">Plan Ahead</h2>
+            <p class="text-stone-500 text-sm leading-relaxed flex-1 mb-6">
+              Explore options and pricing at your own pace. Create a personalized plan — for yourself or someone you love.
+            </p>
+
+            <div class="w-full bg-violet-600 hover:bg-violet-700 text-white rounded-xl py-3 text-sm font-semibold text-center transition-colors">
+              Start Planning
+            </div>
+          </button>
+        </div>
+
+        <!-- Card 3: Research / Questions -->
+        <button
+          class="journey-card text-left border border-blue-200 bg-white rounded-2xl p-6 cursor-pointer hover:shadow-lg hover:border-blue-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 flex flex-col"
+          onclick="openConcierge('research')"
+          aria-label="I have questions — ask about cremation, costs, and more"
+        >
+          <div class="w-12 h-12 rounded-full bg-blue-50 flex items-center justify-center mb-4 flex-shrink-0">
+            <svg width="22" height="22" viewBox="0 0 22 22" fill="none" aria-hidden="true">
+              <circle cx="11" cy="11" r="8.5" stroke="#2563eb" stroke-width="1.5"/>
+              <path d="M11 12.5V12c0-1 .75-1.5 1.5-2.25A2.5 2.5 0 108.5 8" stroke="#2563eb" stroke-width="1.5" stroke-linecap="round"/>
+              <circle cx="11" cy="15" r="0.75" fill="#2563eb"/>
+            </svg>
+          </div>
+
+          <div class="mb-3">
+            <span class="text-xs font-semibold text-blue-700 bg-blue-50 border border-blue-200 px-2.5 py-1 rounded-full">Ask anything</span>
+          </div>
+
+          <h2 class="font-display text-stone-700 text-xl mb-2">I Have Questions</h2>
+          <p class="text-stone-500 text-sm leading-relaxed flex-1 mb-6">
+            Costs, cremation vs. burial, veterans benefits, scattering ashes — ask anything, no pressure at all.
+          </p>
+
+          <div class="w-full bg-blue-600 hover:bg-blue-700 text-white rounded-xl py-3 text-sm font-semibold text-center transition-colors">
+            Ask a Question
+          </div>
+        </button>
+
+      </div>
+
+      <!-- Trust bar -->
+      <div class="mt-10 pt-8 border-t border-stone-200 max-w-3xl mx-auto">
+        <div class="grid grid-cols-2 sm:grid-cols-4 gap-4 text-center">
+          <div>
+            <p class="text-stone-700 font-semibold text-sm">500+</p>
+            <p class="text-stone-400 text-xs mt-0.5">Families Served</p>
+          </div>
+          <div>
+            <p class="text-stone-700 font-semibold text-sm">Licensed</p>
+            <p class="text-stone-400 text-xs mt-0.5">& Fully Bonded</p>
+          </div>
+          <div>
+            <p class="text-stone-700 font-semibold text-sm">24 / 7</p>
+            <p class="text-stone-400 text-xs mt-0.5">Always Available</p>
+          </div>
+          <div>
+            <p class="text-stone-700 font-semibold text-sm">Transparent</p>
+            <p class="text-stone-400 text-xs mt-0.5">Pricing — No Hidden Fees</p>
+          </div>
+        </div>
+      </div>
+
+    </section>
+
+    <!-- ===================== SECONDARY CONTENT (stub) ===================== -->
+    <section id="services" class="max-w-4xl mx-auto px-4 sm:px-6 py-16">
+      <h2 class="font-display text-2xl text-stone-700 text-center mb-3">Our Services</h2>
+      <p class="text-stone-500 text-center max-w-xl mx-auto text-sm leading-relaxed">
+        Simple, dignified cremation services — designed around your family's needs and budget.
+      </p>
+    </section>
+
+  </main>
+
+  <!-- ===================== FOOTER ===================== -->
+  <footer class="bg-white border-t border-stone-200 py-8 px-4 sm:px-6 mt-8">
+    <div class="max-w-4xl mx-auto flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 text-sm text-stone-400">
+      <span class="font-display text-stone-600">Carewell Cremations</span>
+      <div class="flex gap-5">
+        <a href="#" class="hover:text-stone-600 transition-colors">Privacy Policy</a>
+        <a href="#" class="hover:text-stone-600 transition-colors">Terms of Service</a>
+        <a href="#" class="hover:text-stone-600 transition-colors">FTC Disclosure</a>
+      </div>
+      <span>© 2025 Carewell Cremations. All rights reserved.</span>
+    </div>
+  </footer>
+
+  <!-- ===================== OVERLAY ===================== -->
+  <div
+    id="overlay"
+    class="fixed inset-0 bg-black/40 z-40 hidden"
+    onclick="closeConcierge()"
+    aria-hidden="true"
+  ></div>
+
+  <!-- ===================== AI CONCIERGE PANEL ===================== -->
+  <aside
+    id="concierge-panel"
+    class="fixed top-0 right-0 bottom-0 w-full md:w-[420px] bg-white z-50 flex flex-col shadow-2xl"
+    aria-label="AI Care Concierge"
+    role="dialog"
+    aria-modal="true"
+  >
+    <!-- Panel header -->
+    <div class="bg-violet-50 border-b border-violet-100 px-5 py-4 flex items-center gap-3 flex-shrink-0">
+      <!-- Mobile drag handle -->
+      <div class="absolute top-3 left-1/2 -translate-x-1/2 w-10 h-1 bg-violet-200 rounded-full md:hidden"></div>
+
+      <div class="w-10 h-10 rounded-full bg-violet-600 flex items-center justify-center flex-shrink-0">
+        <svg width="18" height="18" viewBox="0 0 18 18" fill="none" aria-hidden="true">
+          <path d="M9 2C5.134 2 2 5.134 2 9a6.97 6.97 0 001.5 4.33L2 16l2.67-1.5A6.97 6.97 0 009 16c3.866 0 7-3.134 7-7S12.866 2 9 2z" fill="white"/>
+        </svg>
+      </div>
+      <div class="flex-1 min-w-0">
+        <p class="font-semibold text-stone-700 text-sm">Care Concierge</p>
+        <div class="flex items-center gap-1.5 mt-0.5">
+          <span class="w-1.5 h-1.5 rounded-full bg-emerald-500 flex-shrink-0"></span>
+          <p id="panel-subtitle" class="text-violet-600 text-xs truncate">Compassionate AI guidance</p>
+        </div>
+      </div>
+      <button
+        onclick="closeConcierge()"
+        class="p-1.5 rounded-lg text-stone-400 hover:text-stone-600 hover:bg-stone-100 transition-colors flex-shrink-0"
+        aria-label="Close concierge panel"
+      >
+        <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+          <path d="M3 3l10 10M13 3L3 13" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+        </svg>
+      </button>
+    </div>
+
+    <!-- Messages area -->
+    <div id="messages" class="flex-1 overflow-y-auto px-4 py-5 space-y-3" aria-live="polite" aria-label="Chat messages">
+      <!-- Messages injected by JS -->
+    </div>
+
+    <!-- Typing indicator -->
+    <div id="typing-indicator" class="px-4 pb-2 hidden" aria-label="Assistant is typing">
+      <div class="msg-ai inline-flex items-center gap-1.5 px-4 py-3">
+        <span class="dot1 w-1.5 h-1.5 bg-violet-500 rounded-full"></span>
+        <span class="dot2 w-1.5 h-1.5 bg-violet-500 rounded-full"></span>
+        <span class="dot3 w-1.5 h-1.5 bg-violet-500 rounded-full"></span>
+      </div>
+    </div>
+
+    <!-- Quick reply chips (context-sensitive) -->
+    <div id="quick-replies" class="px-4 pb-3 hidden">
+      <div class="flex flex-wrap gap-2" id="chips-container"></div>
+    </div>
+
+    <!-- Input bar -->
+    <div class="border-t border-stone-100 bg-white px-4 py-3 flex items-center gap-2 flex-shrink-0">
+      <input
+        id="user-input"
+        type="text"
+        placeholder="Type a message..."
+        class="flex-1 bg-stone-50 border border-stone-200 rounded-xl px-4 py-2.5 text-sm text-stone-700 placeholder-stone-400 focus:outline-none focus:border-violet-400 focus:ring-1 focus:ring-violet-400 transition-colors"
+        onkeydown="handleKeydown(event)"
+        autocomplete="off"
+      />
+      <button
+        id="send-btn"
+        onclick="handleSend()"
+        class="bg-violet-600 hover:bg-violet-700 text-white rounded-xl px-4 py-2.5 text-sm font-semibold transition-colors flex-shrink-0 disabled:opacity-50 disabled:cursor-not-allowed"
+        aria-label="Send message"
+      >
+        Send
+      </button>
+    </div>
+
+    <!-- Human escalation link -->
+    <div class="border-t border-stone-100 px-4 py-2.5 text-center flex-shrink-0">
+      <button
+        onclick="requestHuman()"
+        class="text-xs text-stone-400 hover:text-stone-600 transition-colors underline underline-offset-2"
+      >
+        Prefer to speak with a person? Connect me now.
+      </button>
+    </div>
+  </aside>
+
+  <!-- ===================== JAVASCRIPT ===================== -->
+  <script>
+    // ----------------------------------------------------------------
+    // CONFIG
+    // ----------------------------------------------------------------
+    const API_ENDPOINT = '/.netlify/functions/concierge-v1';
+    const MAX_HISTORY  = 20; // keep last N messages to manage token cost
+
+    // DEV_MODE: set true to bypass Netlify function and use mock responses.
+    // Set to FALSE before deploying to production.
+    // DEV_MODE: true = mock responses (no backend needed). Set false when concierge-v1.js is deployed.
+    const DEV_MODE = true;
+
+    // MOCK RESPONSES — cycled in order when DEV_MODE = true
+    const MOCK_RESPONSES = {
+      immediate: [
+        "Hello. I'm so very sorry — I can only imagine how difficult this moment must be. I'm here with you, and we'll take this one step at a time.\n\nCan you tell me a little bit about what's happened?",
+        "Thank you for sharing that with me. I'm so sorry for your loss.\n\nIs your loved one currently at home, at a hospital, or at a care facility?",
+        "I understand. The staff there will keep your loved one safe while you make arrangements — there's no need to rush.\n\nMay I ask your first name?",
+      ],
+      planning: [
+        "Hello, and thank you for taking this thoughtful step. Planning ahead is one of the most caring things a person can do.\n\nIs this plan for yourself, or for someone special in your life?",
+        "That's a wonderful thing to do for your family. Do you have a sense of timeframe — within the next year, or just beginning to explore?",
+        "Of course — no pressure at all. Direct cremation typically ranges from $800 to $1,500. Would you like to know what that includes?",
+      ],
+      research: [
+        "Hello! I'm happy to help you find the answers you're looking for. There are no wrong questions here.\n\nWhat would you like to know today?",
+        "Great question. Direct cremation typically ranges from $800 to $1,500 depending on location. This includes the transfer, the cremation itself, and return of the remains. Would you like to compare it with other options?",
+        "Cremation and burial differ in several key ways. Cremation is generally more affordable and flexible for memorialization. Would you like to explore either in more detail?",
+      ],
+    };
+    let mockIndex = 0;
+
+    // ----------------------------------------------------------------
+    // SYSTEM PROMPTS — one per journey
+    // ----------------------------------------------------------------
+    const SYSTEM_PROMPTS = {
+
+      immediate: `You are a Digital Care Concierge for Carewell Cremations — a compassionate, licensed cremation services company available 24/7.
+
+A family member has just experienced the loss of a loved one. Your role is to be a calm, warm, unhurried presence that helps them understand what happens next.
+
+RULES:
+- Ask ONE question at a time. Never list multiple questions.
+- Begin with a brief, genuine expression of sympathy — then gently ask what has happened.
+- Determine: where is the loved one now? (hospital / home / care facility / unknown / other state)
+- Explain the next concrete step (transfer authorization, what the hospital will do, timeline) — in plain, calm language.
+- Collect, one at a time: the caller's first name, phone number, email address, their relationship to the deceased.
+- Ask whether their loved one was a veteran or the spouse of one.
+- Offer two options: a) schedule a callback with one of our care advisors, or b) book a consultation via our online calendar.
+- If at ANY point the person says they want to speak to a human, say: "Of course — I'm connecting you with one of our care advisors right now. Someone will call you within 10 minutes. Can I confirm the best number to reach you?"
+- Never use clinical jargon. Never rush. Never list prices unprompted during an immediate-need call.
+- Tone: warm, present, steady — like a trusted friend who happens to know exactly what to do.`,
+
+      planning: `You are a Digital Care Concierge for Carewell Cremations — a compassionate, licensed cremation services company.
+
+A visitor is pre-planning — either for themselves or for a loved one. Your role is educational, warm, and completely pressure-free.
+
+RULES:
+- Ask ONE question at a time.
+- First question: "Is this plan for yourself, or for someone you love?"
+- Second: gauge timeframe — near-term (within the year) or exploratory.
+- Walk through preferences naturally: type of cremation (direct / witnessed / full-service), memorialization wishes (scatter, urn, jewelry, tree burial), ceremony preferences.
+- After preferences, mention pricing ranges casually: direct cremation typically ranges from $800–$1,500; full-service from $2,500–$5,000 — depending on location and options.
+- Ask about veteran status — mention VA benefits are available and can significantly reduce costs.
+- After 4–5 exchanges, softly offer: "I can send you our free Family Planning Guide — it covers all of this in one place. What email should I send it to?"
+- Offer a no-obligation consultation if they seem ready.
+- Never be salesy. Never pressure. This is an educational conversation.
+- Tone: warm, informative, like a knowledgeable friend — not a salesperson.`,
+
+      research: `You are a Digital Care Concierge for Carewell Cremations — a compassionate, licensed cremation services company.
+
+A visitor has general questions and is in research or information-gathering mode. Your role is to be a knowledgeable, patient, helpful resource.
+
+RULES:
+- Open with: "I'm happy to help. What would you like to know?"
+- After they ask a question, detect intent: cost / cremation process / cremation vs burial / green burial / veterans benefits / scattering ashes / grief resources / other.
+- Answer clearly and concisely — 2–4 sentences. Don't overwhelm.
+- After answering, ask: "Does that answer your question, or would you like to know more about that?"
+- After 2–3 exchanges, offer: "I could send you a free resource guide on this topic. Would that be helpful?" — if yes, ask for their email.
+- Never assume urgency. Never push for a sale. This visitor is learning.
+- If they reveal a loss or indicate urgency, gently shift: "It sounds like this may be more immediate — would it help to speak with one of our care advisors directly?"
+- Tone: knowledgeable, patient, like a librarian who truly cares.`
+    };
+
+    // ----------------------------------------------------------------
+    // OPENING MESSAGES — pre-written, instant display (no API call needed)
+    // ----------------------------------------------------------------
+    const OPENING_MESSAGES = {
+      immediate: "Hello. I'm so very sorry — I can only imagine how difficult this moment must be. I'm here with you, and we'll take this one step at a time.\n\nCan you tell me a little bit about what's happened?",
+      planning:  "Hello, and thank you for taking this thoughtful step. Planning ahead is one of the most caring things a person can do for the people they love.\n\nIs this plan for yourself, or for someone special in your life?",
+      research:  "Hello! I'm happy to help you find the answers you're looking for. There are no wrong questions here.\n\nWhat would you like to know today?"
+    };
+
+    const PANEL_SUBTITLES = {
+      immediate: 'Immediate care — here with you now',
+      planning:  'Pre-planning guidance',
+      research:  'Your questions, answered'
+    };
+
+    // ----------------------------------------------------------------
+    // STATE
+    // ----------------------------------------------------------------
+    let conversationHistory = [];
+    let currentJourney     = null;
+    let isSending          = false;
+
+    // ----------------------------------------------------------------
+    // OPEN / CLOSE PANEL
+    // ----------------------------------------------------------------
+    function openConcierge(journey) {
+      currentJourney      = journey;
+      conversationHistory = [];
+      mockIndex           = 0; // reset mock cycle for new session
+
+      // Update panel subtitle
+      document.getElementById('panel-subtitle').textContent = PANEL_SUBTITLES[journey] || 'Compassionate AI guidance';
+
+      // Clear messages and error banner
+      document.getElementById('messages').innerHTML = '';
+      document.getElementById('quick-replies').classList.add('hidden');
+      hideErrorBanner();
+
+      // Show overlay + panel
+      document.getElementById('overlay').classList.remove('hidden');
+      const panel = document.getElementById('concierge-panel');
+      panel.classList.add('open');
+      panel.removeAttribute('aria-hidden');
+      panel.focus();
+
+      // Display opening message immediately (no API call)
+      const openingText = OPENING_MESSAGES[journey];
+      appendMessage('assistant', openingText);
+      conversationHistory.push({ role: 'assistant', content: openingText });
+
+      // Show quick reply chips for research journey
+      if (journey === 'research') {
+        showQuickReplies(['Cremation costs', 'Cremation vs burial', 'Veterans benefits', 'Scattering ashes', 'Green burial']);
+      }
+
+      // Focus input
+      setTimeout(() => document.getElementById('user-input').focus(), 350);
+    }
+
+
+
+    function closeConcierge() {
+      const panel = document.getElementById('concierge-panel');
+      panel.classList.remove('open');
+      panel.setAttribute('aria-hidden', 'true');
+      document.getElementById('overlay').classList.add('hidden');
+    }
+
+    // ----------------------------------------------------------------
+    // SEND MESSAGE
+    // ----------------------------------------------------------------
+    async function handleSend() {
+      const input = document.getElementById('user-input');
+      const text  = input.value.trim();
+      if (!text || isSending) return;
+
+      input.value = '';
+      hideQuickReplies();
+      appendMessage('user', text);
+      conversationHistory.push({ role: 'user', content: text });
+
+      await callConcierge();
+    }
+
+    function handleKeydown(e) {
+      if (e.key === 'Enter' && !e.shiftKey) {
+        e.preventDefault();
+        handleSend();
+      }
+    }
+
+    async function sendQuickReply(text) {
+      hideQuickReplies();
+      appendMessage('user', text);
+      conversationHistory.push({ role: 'user', content: text });
+      await callConcierge();
+    }
+
+    async function requestHuman() {
+      const msg = 'I\'d prefer to speak with a person.';
+      appendMessage('user', msg);
+      conversationHistory.push({ role: 'user', content: msg });
+      await callConcierge();
+    }
+
+    // ----------------------------------------------------------------
+    // API CALL
+    // ----------------------------------------------------------------
+    async function callConcierge() {
+      if (isSending) return;
+      isSending = true;
+      setInputDisabled(true);
+      showTyping(true);
+      hideErrorBanner();
+
+      // DEV_MODE: return a mock response without hitting the API
+      if (DEV_MODE) {
+        await new Promise(r => setTimeout(r, 900)); // simulate latency
+        const pool    = MOCK_RESPONSES[currentJourney] || MOCK_RESPONSES.research;
+        const aiText  = pool[mockIndex % pool.length];
+        mockIndex++;
+        conversationHistory.push({ role: 'assistant', content: aiText });
+        appendMessage('assistant', aiText);
+        isSending = false;
+        setInputDisabled(false);
+        showTyping(false);
+        document.getElementById('user-input').focus();
+        return;
+      }
+
+      // LIVE MODE: call Netlify function → Claude API
+      const trimmedHistory = conversationHistory.slice(-MAX_HISTORY);
+
+      try {
+        const response = await fetch(API_ENDPOINT, {
+          method:  'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            journey:      currentJourney,
+            systemPrompt: SYSTEM_PROMPTS[currentJourney],
+            messages:     trimmedHistory
+          })
+        });
+
+        if (!response.ok) {
+          const bodyText = await response.text().catch(() => '');
+          throw new Error(`HTTP ${response.status}${bodyText ? ': ' + bodyText.slice(0, 120) : ''}`);
+        }
+
+        const data   = await response.json();
+        const aiText = data.content?.[0]?.text;
+
+        if (!aiText) throw new Error('Empty response from API');
+
+        conversationHistory.push({ role: 'assistant', content: aiText });
+        appendMessage('assistant', aiText);
+        maybeShowLeadCapture(aiText);
+
+      } catch (err) {
+        console.error('Concierge API error:', err);
+
+        // Build a specific, actionable error message (visible without console)
+        let bannerMsg = 'Error: ' + err.message;
+        if (err.message.includes('404')) {
+          bannerMsg = 'Function not found (HTTP 404). Deploy checklist: 1) concierge-v1.js is in netlify/functions/. 2) netlify.toml lists the function. 3) Site has been redeployed after adding the file.';
+        } else if (err.message.includes('401') || err.message.includes('403')) {
+          bannerMsg = 'API key rejected (HTTP ' + (err.message.match(/\d{3}/) || [''])[0] + '). Check ANTHROPIC_API_KEY in Netlify → Site Settings → Environment Variables.';
+        } else if (err.message.includes('500') || err.message.includes('502')) {
+          bannerMsg = 'Function error (HTTP ' + (err.message.match(/\d{3}/) || [''])[0] + '). Check Netlify → Functions → concierge-v1 → Log for details.';
+        } else if (err.name === 'TypeError' && err.message.includes('fetch')) {
+          bannerMsg = 'Network error — cannot reach the function. If testing locally, run: netlify dev. Or set DEV_MODE = true to test without a backend.';
+        }
+        showErrorBanner(bannerMsg, 'error');
+
+        // Friendly in-chat message
+        appendMessage('assistant', "I'm sorry — I wasn't able to connect just now. Please try again in a moment, or call us directly at (800) 555-1234 and we'll be glad to help.");
+      } finally {
+        isSending = false;
+        setInputDisabled(false);
+        showTyping(false);
+        document.getElementById('user-input').focus();
+      }
+    }
+
+    // ----------------------------------------------------------------
+    // UI HELPERS
+    // ----------------------------------------------------------------
+    function appendMessage(role, text) {
+      const container = document.getElementById('messages');
+
+      const wrapper = document.createElement('div');
+      wrapper.className = role === 'assistant' ? 'flex justify-start' : 'flex justify-end';
+
+      const bubble = document.createElement('div');
+      bubble.className = role === 'assistant' ? 'msg-ai px-4 py-3 text-sm leading-relaxed' : 'msg-user px-4 py-3 text-sm leading-relaxed';
+
+      // Preserve newlines
+      bubble.innerHTML = escapeHtml(text).replace(/\n/g, '<br/>');
+
+      wrapper.appendChild(bubble);
+      container.appendChild(wrapper);
+      container.scrollTop = container.scrollHeight;
+    }
+
+    function escapeHtml(str) {
+      return str
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;');
+    }
+
+    // Error / warning banner inside the panel (visible without console)
+    function showErrorBanner(msg, type = 'error') {
+      let banner = document.getElementById('error-banner');
+      if (!banner) {
+        banner = document.createElement('div');
+        banner.id = 'error-banner';
+        banner.style.cssText = 'margin: 0 16px 8px; padding: 8px 12px; border-radius: 8px; font-size: 12px; line-height: 1.5; display: flex; align-items: flex-start; gap: 8px;';
+        // Insert above the input bar
+        const inputBar = document.querySelector('#concierge-panel .border-t');
+        inputBar.parentNode.insertBefore(banner, inputBar);
+      }
+      const colors = {
+        error:   'background:#fef2f2; border:1px solid #fecaca; color:#b91c1c;',
+        warning: 'background:#fffbeb; border:1px solid #fde68a; color:#92400e;',
+      };
+      banner.style.cssText += colors[type] || colors.error;
+      banner.innerHTML = `<span style="flex-shrink:0">${type === 'warning' ? '⚠️' : '⛔'}</span><span>${escapeHtml(msg)}</span>`;
+      banner.style.display = 'flex';
+    }
+
+    function hideErrorBanner() {
+      const banner = document.getElementById('error-banner');
+      if (banner) banner.style.display = 'none';
+    }
+
+    function showTyping(visible) {
+      document.getElementById('typing-indicator').classList.toggle('hidden', !visible);
+      const msgs = document.getElementById('messages');
+      msgs.scrollTop = msgs.scrollHeight;
+    }
+
+    function setInputDisabled(disabled) {
+      document.getElementById('user-input').disabled = disabled;
+      document.getElementById('send-btn').disabled   = disabled;
+    }
+
+    function showQuickReplies(chips) {
+      const container = document.getElementById('chips-container');
+      container.innerHTML = '';
+      chips.forEach(label => {
+        const btn = document.createElement('button');
+        btn.className = 'text-xs bg-violet-50 border border-violet-200 text-violet-700 px-3 py-1.5 rounded-full hover:bg-violet-100 transition-colors';
+        btn.textContent = label;
+        btn.onclick = () => sendQuickReply(label);
+        container.appendChild(btn);
+      });
+      document.getElementById('quick-replies').classList.remove('hidden');
+    }
+
+    function hideQuickReplies() {
+      document.getElementById('quick-replies').classList.add('hidden');
+    }
+
+    function maybeShowLeadCapture(text) {
+      const t = text.toLowerCase();
+      // If AI mentions email / send guide — show a subtle prompt
+      if (t.includes('what email') || t.includes('your email') || t.includes('send it to')) {
+        // Could render an inline email field here in a future version
+        // For v1 — handled naturally in chat
+      }
+    }
+
+    // Keyboard: close on Escape
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape') closeConcierge();
+    });
+  </script>
+
+</body>
+</html>

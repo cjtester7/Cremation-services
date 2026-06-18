@@ -5,7 +5,7 @@
 # Update [build].publish and [[redirects]] when bumping to a new index version.
 #
 # Active versions:
-#   index-v2.html          — hero section with AI concierge (CR001 fixes)
+#   index-v3.html          — hero section with AI concierge (CR002 fixes)
 #   voice-test-v1.html     — standalone Gemini voice test page
 #   concierge-v1.js        — Claude API proxy function
 #   lead-capture-v1.js     — lead storage + email function
@@ -41,7 +41,7 @@
 # Canonical entry: index-v1.html is served at /
 [[redirects]]
   from   = "/"
-  to     = "/index-v2.html"
+  to     = "/index-v3.html"
   status = 200
 
 # Voice test page — accessible at /voice-test
