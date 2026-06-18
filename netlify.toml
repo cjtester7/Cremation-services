@@ -5,7 +5,7 @@
 # Update [build].publish and [[redirects]] when bumping to a new index version.
 #
 # Active versions:
-#   index-v6.html          — hero section with AI concierge (CR005 live production)
+#   index-v7.html          — hero section with AI concierge (CR006 error banner fix)
 #   concierge-v2.js        — Claude API proxy with full Carewell knowledge base
 #   voice-test-v1.html     — standalone Gemini voice test page
 #   concierge-v1.js        — Claude API proxy function
@@ -42,7 +42,7 @@
 # Canonical entry: index-v1.html is served at /
 [[redirects]]
   from   = "/"
-  to     = "/index-v6.html"
+  to     = "/index-v7.html"
   status = 200
 
 # Voice test page — accessible at /voice-test
