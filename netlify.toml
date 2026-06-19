@@ -5,8 +5,8 @@
 # Update [build].publish and [[redirects]] when bumping to a new index version.
 #
 # Active versions:
-#   index-v8.html          — hero section with AI concierge (CR006 Calendly booking)
-#   concierge-v3.js        — Claude API proxy with [SHOW_BOOKING] token support
+#   index-v9.html          — hero section with AI concierge (CR007 lead capture)
+#   concierge-v4.js        — Claude API proxy with lead capture + booking token support
 #   concierge-v2.js        — Claude API proxy with full Carewell knowledge base
 #   voice-test-v1.html     — standalone Gemini voice test page
 #   concierge-v1.js        — Claude API proxy function
@@ -43,7 +43,7 @@
 # Canonical entry: index-v1.html is served at /
 [[redirects]]
   from   = "/"
-  to     = "/index-v8.html"
+  to     = "/index-v9.html"
   status = 200
 
 # Voice test page — accessible at /voice-test
@@ -72,6 +72,9 @@
   included_files = []
 
 [functions."concierge-v3"]
+  included_files = []
+
+[functions."concierge-v4"]
   included_files = []
 
 [functions."lead-capture-v1"]
