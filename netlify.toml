@@ -1,9 +1,9 @@
-# netlify.toml — v13
-# Updated for CR009 revision: index-v13.html
+# netlify.toml — v14
+# Updated for CR010: index-v14.html
 
 [[redirects]]
   from = "/"
-  to = "/index-v13.html"
+  to = "/index-v14.html"
   status = 200
 
 [[redirects]]
