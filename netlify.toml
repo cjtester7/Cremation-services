@@ -1,9 +1,9 @@
-# netlify.toml — v15
-# Updated for CR011: index-v15.html
+# netlify.toml — v16
+# Updated for CR011 revision: index-v16.html
 
 [[redirects]]
   from = "/"
-  to = "/index-v15.html"
+  to = "/index-v16.html"
   status = 200
 
 [[redirects]]
