@@ -1041,10 +1041,7 @@ function findTruncationPoint(text, threshold) {
   // Find last sentence end at or before threshold + 100 char window
   var window = text.substring(0, threshold + 100);
   var sentenceEnd = -1;
-  var patterns = ['. ', '? ', '! ', '.
-', '?
-', '!
-'];
+  var patterns = ['. ', '? ', '! ', '.\n', '?\n', '!\n'];
   patterns.forEach(function(p) {
     var idx = window.lastIndexOf(p);
     if (idx > sentenceEnd) sentenceEnd = idx + 1;
