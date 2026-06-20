@@ -1,9 +1,9 @@
-# netlify.toml — v10
-# Updated for CR008: index-v10.html
+# netlify.toml — v11
+# Updated for CR008 Error 01 fix: index-v11.html
 
 [[redirects]]
   from = "/"
-  to = "/index-v10.html"
+  to = "/index-v11.html"
   status = 200
 
 [[redirects]]
