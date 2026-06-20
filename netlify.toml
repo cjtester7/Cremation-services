@@ -1,0 +1,22 @@
+# netlify.toml — v17
+# Updated for CR011 Error 01 fix: index-v17.html
+
+[[redirects]]
+  from = "/"
+  to = "/index-v17.html"
+  status = 200
+
+[[redirects]]
+  from = "/voice-test"
+  to = "/voice-test-v1.html"
+  status = 200
+
+[build]
+  functions = "netlify/functions"
+
+[[headers]]
+  for = "/*"
+  [headers.values]
+    Cache-Control = "no-cache, no-store, must-revalidate"
+    Pragma = "no-cache"
+    Expires = "0"
