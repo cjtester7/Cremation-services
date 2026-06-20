@@ -1,9 +1,9 @@
-# netlify.toml — v17
-# Updated for CR011 Error 01 fix: index-v17.html
+# netlify.toml — v18
+# Updated for CR011 Error 02: index-v18.html
 
 [[redirects]]
   from = "/"
-  to = "/index-v17.html"
+  to = "/index-v18.html"
   status = 200
 
 [[redirects]]
