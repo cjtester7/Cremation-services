@@ -1,107 +1,22 @@
-# netlify.toml
-# Carewell Cremations — Netlify Configuration
-# Version: 1.0
-# Publish dir points to the current active HTML version.
-# Update [build].publish and [[redirects]] when bumping to a new index version.
-#
-# Active versions:
-#   index-v9.html          — hero section with AI concierge (CR007 lead capture)
-#   concierge-v4.js        — Claude API proxy with lead capture + booking token support
-#   concierge-v2.js        — Claude API proxy with full Carewell knowledge base
-#   voice-test-v1.html     — standalone Gemini voice test page
-#   concierge-v1.js        — Claude API proxy function
-#   lead-capture-v1.js     — lead storage + email function
-#   gemini-token-v1.js     — Gemini API key provider for voice
+# netlify.toml — v10
+# Updated for CR008: index-v10.html
 
-# ---------------------------------------------------------------------------
-# BUILD SETTINGS
-# ---------------------------------------------------------------------------
+[[redirects]]
+  from = "/"
+  to = "/index-v10.html"
+  status = 200
+
+[[redirects]]
+  from = "/voice-test"
+  to = "/voice-test-v1.html"
+  status = 200
+
 [build]
-  publish   = "."                     # root — index-v1.html is the entry point
-  functions = "netlify/functions"     # serverless functions directory
+  functions = "netlify/functions"
 
-# ---------------------------------------------------------------------------
-# ENVIRONMENT CONTEXT
-# ---------------------------------------------------------------------------
-[context.production.environment]
-  NODE_VERSION = "18"
-  # Set secrets in Netlify dashboard → Site Settings → Environment Variables:
-  #   ANTHROPIC_API_KEY
-  #   SUPABASE_URL
-  #   SUPABASE_ANON_KEY
-  #   RESEND_API_KEY
-  #   FROM_EMAIL
-  #   ALLOWED_ORIGIN
-  #   CRM_WEBHOOK_URL  (optional)
-
-[context.deploy-preview.environment]
-  NODE_VERSION = "18"
-
-# ---------------------------------------------------------------------------
-# REDIRECTS
-# ---------------------------------------------------------------------------
-# Canonical entry: index-v1.html is served at /
-[[redirects]]
-  from   = "/"
-  to     = "/index-v9.html"
-  status = 200
-
-# Voice test page — accessible at /voice-test
-[[redirects]]
-  from   = "/voice-test"
-  to     = "/voice-test-v1.html"
-  status = 200
-
-# Ensure clean URL routing (SPA-style fallback not needed for static,
-# but kept here for future React/Vue upgrade)
-[[redirects]]
-  from   = "/*"
-  to     = "/index-v1.html"
-  status = 200
-
-# ---------------------------------------------------------------------------
-# FUNCTION-SPECIFIC SETTINGS
-# ---------------------------------------------------------------------------
-[functions]
-  node_bundler = "esbuild"
-
-[functions."concierge-v1"]
-  included_files = []
-
-[functions."concierge-v2"]
-  included_files = []
-
-[functions."concierge-v3"]
-  included_files = []
-
-[functions."concierge-v4"]
-  included_files = []
-
-[functions."lead-capture-v1"]
-  included_files = []
-
-[functions."gemini-token-v1"]
-  included_files = []
-
-# ---------------------------------------------------------------------------
-# HTTP HEADERS — security hardening
-# ---------------------------------------------------------------------------
 [[headers]]
   for = "/*"
   [headers.values]
-    X-Frame-Options           = "DENY"
-    X-Content-Type-Options    = "nosniff"
-    Referrer-Policy           = "strict-origin-when-cross-origin"
-    Permissions-Policy        = "camera=(), microphone=(), geolocation=()"
-
-# Cache HTML — no-store prevents stale file being served after Netlify redeploy
-[[headers]]
-  for = "/*.html"
-  [headers.values]
     Cache-Control = "no-cache, no-store, must-revalidate"
-
-# Cache static assets aggressively
-[[headers]]
-  for = "/assets/*"
-  [headers.values]
-    Cache-Control = "public, max-age=31536000, immutable"
+    Pragma = "no-cache"
+    Expires = "0"
