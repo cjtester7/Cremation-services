@@ -1,9 +1,9 @@
-# netlify.toml — v19
-# Updated for CR012: index-v19.html
+# netlify.toml — v20
+# Updated for CR013: index-v20.html + send-email-v2.js
 
 [[redirects]]
   from = "/"
-  to = "/index-v19.html"
+  to = "/index-v20.html"
   status = 200
 
 [[redirects]]
