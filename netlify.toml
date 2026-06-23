@@ -1,9 +1,9 @@
-# netlify.toml — v21
-# Updated for CR014: index-v21.html + booking-capture-v1.js
+# netlify.toml — v22
+# Updated for CR015: index-v22.html
 
 [[redirects]]
   from = "/"
-  to = "/index-v21.html"
+  to = "/index-v22.html"
   status = 200
 
 [[redirects]]
