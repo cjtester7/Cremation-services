@@ -1,9 +1,9 @@
-# netlify.toml — v20
-# Updated for CR013: index-v20.html + send-email-v2.js
+# netlify.toml — v21
+# Updated for CR014: index-v21.html + booking-capture-v1.js
 
 [[redirects]]
   from = "/"
-  to = "/index-v20.html"
+  to = "/index-v21.html"
   status = 200
 
 [[redirects]]
