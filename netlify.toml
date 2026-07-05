@@ -1,9 +1,9 @@
-# netlify.toml — v22
-# Updated for CR015: index-v22.html
+# netlify.toml — v24
+# Updated for CR016: index-v24.html
 
 [[redirects]]
   from = "/"
-  to = "/index-v22.html"
+  to = "/index-v24.html"
   status = 200
 
 [[redirects]]
