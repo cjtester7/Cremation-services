@@ -1,9 +1,9 @@
-# netlify.toml — v25
-# Updated for CR016 revision: index-v25.html
+# netlify.toml — v26
+# Updated for CR017: index-v26.html
 
 [[redirects]]
   from = "/"
-  to = "/index-v25.html"
+  to = "/index-v26.html"
   status = 200
 
 [[redirects]]
