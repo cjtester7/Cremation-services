@@ -1,7 +1,17 @@
 /**
  * concierge-v4.js
  * Carewell Cremations — AI Concierge Serverless Function
- * Version: 4.0
+ * Version: 4.1
+ * CR018 — Model swap + cost fix:
+ *   - MODEL_MAP: immediate/planning switched from claude-opus-4-5 to
+ *     claude-sonnet-5 (Opus was driving unnecessary token cost for a
+ *     scripted, low-complexity conversational flow)
+ *   - Added thinking: { type: 'disabled' } to the messages.create() call
+ *     so the full max_tokens budget (450/450/400) goes to the visible
+ *     reply instead of Sonnet 5's adaptive thinking, which is on by
+ *     default and would otherwise eat into that same token cap
+ *   - research journey unchanged (already on claude-haiku-4-5-20251001)
+ *
  * CR007 — Lead capture integration:
  *   - All 3 server-side system prompts updated with [CAPTURE_LEAD] token instruction
  *   - Claude collects first name, last name, email, phone, veteran status naturally
@@ -30,8 +40,8 @@ const CORS_HEADERS = {
 };
 
 const MODEL_MAP = {
-  immediate: 'claude-opus-4-5',
-  planning:  'claude-opus-4-5',
+  immediate: 'claude-sonnet-5',
+  planning:  'claude-sonnet-5',
   research:  'claude-haiku-4-5-20251001',
 };
 
@@ -82,6 +92,7 @@ exports.handler = async (event) => {
     const response = await client.messages.create({
       model:      MODEL_MAP[journey],
       max_tokens: MAX_TOKENS_MAP[journey],
+      thinking:   { type: 'disabled' },
       system:     getSystemPrompt(journey),
       messages:   sanitizedMessages,
     });
